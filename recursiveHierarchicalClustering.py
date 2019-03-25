@@ -98,6 +98,8 @@ def splitCluster(baseCluster, diameter, baseSum, cid, matrix):
     sumDists = []    # store the sum of distance to the base cluster
     newDists = []    # store the sum of distance to the new cluster
 
+    baseCluster = list(baseCluster)
+
     if (baseSum):
         sumDists = baseSum
         newDists = [0 for idx in range(totalNodes)]
@@ -196,6 +198,7 @@ def getIdf(sid_seq, sids=None):
     feqMap = {}
     total = len(sids)
     for sid in sids:
+        sid = str(sid)
         stotal = sum([x[1] for x in sid_seq[sid].items()])
         for word in sid_seq[sid]:
             freq = sid_seq[sid][word]
@@ -246,7 +249,7 @@ def linearReg(evalResults):
     y = np.array([yv for (xv, yv) in evalResults])
     # print(x, y)
     A = np.vstack([x, np.ones(len(x))]).T
-    result = np.linalg.lstsq(A, y)
+    result = np.linalg.lstsq(A, y, rcond=None)
     m, c = result[0]
     residual = result[1]
     # print(result)
@@ -383,6 +386,7 @@ def getChiSquareScore(clusters, sid_seq, idfMap, idxToSid, interestedCids,
         # print(sids)
         feqMap = {}
         for sid in sids:
+            sid = str(sid)
             for word in sid_seq[sid]:
                 if word in currentExclusions:
                     continue
@@ -842,9 +846,9 @@ def runDiana(outPath, sid_seq, matrix=None, matrixPath='tmpMatrix.dat',
                 return set(sid_seq[sid].keys())
 
             excludedSids = [sid for sid in sids
-                            if len(curFeatures(sid) - newExclusionSet) == 0]
+                            if len(curFeatures(str(sid)) - newExclusionSet) == 0]
             sids = [sid for sid in sids
-                    if len(curFeatures(sid) - newExclusionSet) > 0]
+                    if len(curFeatures(str(sid)) - newExclusionSet) > 0]
             # print(oldLen, len(sids), len(excludedFeatures), excludedFeatures)
             # if the cluster size is too small after feature selection,
             # don't cluster it
