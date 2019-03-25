@@ -117,7 +117,7 @@ def calDist(inputPath, sidsPath, outputPath, tmpPrefix='', idfMapPath=None):
                                                  sidsPath.split('sid_')[0]))
     # read the ngram file, generate a node list
     lineNum = 1
-    sids = pickle.load(open(sidsPath))
+    sids = pickle.load(open(sidsPath, 'rb'))
 
     fromSids = set(sids[0])
     # in principle the toSids should be all sids
@@ -127,7 +127,7 @@ def calDist(inputPath, sidsPath, outputPath, tmpPrefix='', idfMapPath=None):
 
     # get the idfMap, if provided
     if (idfMapPath):
-        idfMap = pickle.load(open(idfMapPath))
+        idfMap = pickle.load(open(idfMapPath, 'rb'))
     else:
         idfMap = None
 
@@ -194,7 +194,10 @@ def partialMatrix(sids, idfMap, ngramPath, tmpPrefix, outputPath,
           - indicates whether the sid index is actually offset by 1,
           so that the lowest sid is 0
     """
-    servers = json.load(open('servers.json'))['server']
+
+    base_path = Path(__file__).parent
+    servers_json_path = (base_path / "servers.json").resolve()
+    servers = json.load(open(servers_json_path))['server']
     if not realSid:
         sids = [x + 1 for x in sids]
     total = len(sids)
@@ -204,12 +207,12 @@ def partialMatrix(sids, idfMap, ngramPath, tmpPrefix, outputPath,
         step = total / len(servers) + 1
     processes = []
     start = 0
-    pickle.dump(idfMap, open('%s%sidf.pkl' % (outputPath, tmpPrefix), 'w'))
+    pickle.dump(idfMap, open('%s%sidf.pkl' % (outputPath, tmpPrefix), 'wb'))
     for server in servers:
         if (start >= total):
             break
         pickle.dump([sids[start:start+step], sids], open('%s%ssid_%s.pkl' %
-                     (outputPath, tmpPrefix, server), 'w'))
+                     (outputPath, tmpPrefix, server), 'wb'))
         print('[LOG]: starting in %s for %s' % (server, tmpPrefix))
         if server == 'localhost':
             calDist(ngramPath, '%s%ssid_%s.pkl' %
