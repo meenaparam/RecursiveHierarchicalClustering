@@ -11,7 +11,7 @@ import math
 import subprocess
 import os
 import glob
-import cPickle
+import pickle
 import time
 from array import *
 import datetime
@@ -23,9 +23,13 @@ from scipy import sparse
 import numpy as np
 from sklearn import preprocessing
 from sklearn.utils import sparsefuncs
+from pathlib import Path
 
 
-config = json.load(open('servers.json'))
+base_path = Path(__file__).parent
+servers_json_path = (base_path / "servers.json").resolve()
+config = json.load(open(servers_json_path))
+
 # thread number
 THREAD_NUM = config['threadNum']
 
@@ -57,7 +61,7 @@ class myThread (multiprocessing.Process):
     # @profile
     def run(self):
         # pr = cProfile.Profile()
-        print '[LOG]: start new thread '+str(self.threadID)
+        print('[LOG]: start new thread '+str(self.threadID))
         curTime = time.time()
         distM = self.matrix[self.sfrom].dot(
                     self.matrix[self.sto].T).todense()
@@ -132,7 +136,7 @@ def calDist(inputPath, sidsPath, outputPath, tmpPrefix='', idfMapPath=None):
                                                  sidsPath.split('sid_')[0]))
     # read the ngram file, generate a node list
     lineNum = 1
-    sids = cPickle.load(open(sidsPath))
+    sids = pickle.load(open(sidsPath))
 
     fromSids = set(sids[0])
     # in principle the toSids should be all sids
@@ -142,7 +146,7 @@ def calDist(inputPath, sidsPath, outputPath, tmpPrefix='', idfMapPath=None):
 
     # get the idfMap, if provided
     if (idfMapPath):
-        idfMap = cPickle.load(open(idfMapPath))
+        idfMap = pickle.load(open(idfMapPath))
     else:
         idfMap = None
 
@@ -193,7 +197,9 @@ def partialMatrix(sids, idfMap, ngramPath, tmpPrefix, outputPath,
           - indicates whether the sid index is actually offset by 1,
           so that the lowest sid is 0
     """
-    servers = json.load(open('servers.json'))['server']
+    base_path = Path(__file__).parent
+    servers_json_path = (base_path / "servers.json").resolve()
+    servers = json.load(open(servers_json_path))['server']
     if not realSid:
         sids = [x + 1 for x in sids]
     total = len(sids)
@@ -215,7 +221,7 @@ def partialMatrix(sids, idfMap, ngramPath, tmpPrefix, outputPath,
         step = total / len(servers) + 1
     processes = []
     start = 0
-    cPickle.dump(idfMap, open('%s%sidf.pkl' % (outputPath, tmpPrefix), 'w'))
+    pickle.dump(idfMap, open('%s%sidf.pkl' % (outputPath, tmpPrefix), 'wb'))
 
     # if number of tasks is small enough, run it locally
     if total < MIN_SERVER:
@@ -224,8 +230,8 @@ def partialMatrix(sids, idfMap, ngramPath, tmpPrefix, outputPath,
     for server in servers:
         if (start >= total):
             break
-        cPickle.dump([sids[start:start+step], sids], open('%s%ssid_%s.pkl' %
-                     (outputPath, tmpPrefix, server), 'w'))
+        pickle.dump([sids[start:start+step], sids], open('%s%ssid_%s.pkl' %
+                     (outputPath, tmpPrefix, server), 'wb'))
         print('[LOG]: starting in %s for %s' % (server, tmpPrefix))
         if server == 'localhost':
             calDist(ngramPath, '%s%ssid_%s.pkl' %
