@@ -39,7 +39,7 @@ import os
 import numpy as np
 from RecursiveHierarchicalClustering import calculateDistance
 from RecursiveHierarchicalClustering import mutual_info
-
+from functools import reduce
 
 def getSidNgramMap(inputPath, sids=None):
     """
@@ -641,7 +641,7 @@ def getGini(scoreList):
 
 
 # starting from full set
-def runDiana(outPath, sid_seq, matrix=None, matrixPath='tmpMatrix.dat',
+def runDiana(outPath, sid_seq, ngramPath, matrix=None, matrixPath='tmpMatrix.dat',
              idxToSid=None, totalItems=None, exclusions=[], clusterNum=-1):
     """
     Perform recursive hierarchical clustering
@@ -668,6 +668,9 @@ def runDiana(outPath, sid_seq, matrix=None, matrixPath='tmpMatrix.dat',
     global splitTotal
     global modularityTotal
     global matrixCompTotal
+    global sizeThreshold
+
+    sizeThreshold = 0.05
 
     startTime = time.time()
 
@@ -695,11 +698,11 @@ def runDiana(outPath, sid_seq, matrix=None, matrixPath='tmpMatrix.dat',
 
             matrixStart = time.time()
 
-            # generate the partical matrix and dump it into the file
+            # generate the partial matrix and dump it into the file
             idfMap = excludeFeatures(getIdf(sid_seq, idxToSid), exclusions)
             matrix = calculateDistance.partialMatrix(
                 idxToSid, idfMap, ngramPath, 'tmp_%s_root' % int(time.time()),
-                outPath, True)
+               outPath, True)
             if matrixPath:
                 fout = open(matrixPath, 'w')
                 for row in matrix:
@@ -867,7 +870,7 @@ def runDiana(outPath, sid_seq, matrix=None, matrixPath='tmpMatrix.dat',
                 matrixCompTotal += time.time() - matrixStart
                 # now that we have a new distance matrix, go and do another 
                 # round of clustering
-                result = runDiana('%sp%d_' % (outPath, row[-1]), sid_seq,
+                result = runDiana('%sp%d_' % (outPath, row[-1]), sid_seq, ngramPath,
                                   matrix, idxToSid=sids, totalItems=totalItems,
                                   exclusions=newExclusions)
                 if len(result) > 2:
@@ -932,27 +935,27 @@ def richerTree(tree, sidUidM, startCid=1):
     return startCid, result
 
 
-def run(sid_seq, outPath, matrixPath, sids, nPath):
-    """
-    this function is a simpler version of the main function
-    it is a wrapper around runDiana
-    intended to be used for rhcBootstrap (my testing script)
-    :type sid_seq: Dict{int:Dict{str:int}}
-          - for each user, record the pattern and corresponding occurence #
-    :type outPath: str
-          - the path to store the output and temporary file
-    :type matrixPath: str (default: tmpMatrix.dat)
-          - the path to store the root matrix for this clustering
-    :type sids: List[int]
-          - the users we want to study, identified by sid
-    :type nPath: str
-          - the path to the computed pattern dataset
-    """
-    global sizeThreshold
-    global ngramPath
-    ngramPath = nPath
-    sizeThreshold = 0.05
-    return runDiana(outPath, sid_seq, None, matrixPath, sorted(sids))
+# def run(sid_seq, outPath, matrixPath, sids, nPath):
+#     """
+#     this function is a simpler version of the main function
+#     it is a wrapper around runDiana
+#     intended to be used for rhcBootstrap (my testing script)
+#     :type sid_seq: Dict{int:Dict{str:int}}
+#           - for each user, record the pattern and corresponding occurence #
+#     :type outPath: str
+#           - the path to store the output and temporary file
+#     :type matrixPath: str (default: tmpMatrix.dat)
+#           - the path to store the root matrix for this clustering
+#     :type sids: List[int]
+#           - the users we want to study, identified by sid
+#     :type nPath: str
+#           - the path to the computed pattern dataset
+#     """
+#     global sizeThreshold
+#     global ngramPath
+#     ngramPath = nPath
+#     sizeThreshold = 0.05
+#     return runDiana(outPath, sid_seq, None, matrixPath, sorted(sids))
 
 # store the total time needed to compute distance matrix
 matrixCompTotal = 0
