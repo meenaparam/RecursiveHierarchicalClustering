@@ -37,8 +37,8 @@ from array import *
 import sys
 import os
 import numpy as np
-import calculateDistance
-import mutual_info
+from RecursiveHierarchicalClustering import calculateDistance
+from RecursiveHierarchicalClustering import mutual_info
 
 
 def getSidNgramMap(inputPath, sids=None):
@@ -55,9 +55,11 @@ def getSidNgramMap(inputPath, sids=None):
     """
     sid_seq = {}
 
-    for line in open(inputPath):
+    for line in open(inputPath, 'r'):
         # get the sid
-        sid = int(line.split('\t')[0])
+        # sid = int(line.split('\t')[0])
+        sid = line.split('\t')[0]
+
         if sids and sid not in sids:
             continue
         # get the ngram
@@ -70,7 +72,7 @@ def getSidNgramMap(inputPath, sids=None):
     return sid_seq
 
 
-def splitCluster((baseCluster, diameter, baseSum, cid), matrix):
+def splitCluster(baseCluster, diameter, baseSum, cid, matrix):
     """
     :type baseCluster: List[int]
           - take in the cluster to be splited as a list of stream index
@@ -175,7 +177,7 @@ def getDia(cluster, matrix):
     return maxDis
 
 
-def getIdf(sid_seq, sids):
+def getIdf(sid_seq, sids=None):
     """
     since we are going to use the tfidf frequency as the actual
     weight on each feature vector
@@ -188,6 +190,8 @@ def getIdf(sid_seq, sids):
     :rtype: Dict{str:float}
           - the idf value for all patterns
     """
+    if sids is None:
+        sids = [x[0] for x in sid_seq.items()]
     # sids = [x + 1 for x in sids]
     feqMap = {}
     total = len(sids)
@@ -753,7 +757,7 @@ def runDiana(outPath, sid_seq, matrix=None, matrixPath='tmpMatrix.dat',
             # cProfile.runctx('splitCluster(clusters.pop(), baseMatrix)', globals(), locals())
             # exit(0)
             (clusterA, clusterB, baseSum) = (
-                splitCluster(clusters.pop(), baseMatrix))
+                splitCluster(*(clusters.pop()), baseMatrix))
             # print('splitting cluster %f, %d' % (time.time() - splitStartTime, len(clusters)))
             splitTotal += time.time() - splitStartTime
 

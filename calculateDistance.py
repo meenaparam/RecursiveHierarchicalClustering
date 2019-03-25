@@ -9,12 +9,17 @@ import math
 import subprocess
 import os
 import glob
-import cPickle
+import pickle
 import time
 from array import *
 import datetime
+from pathlib import Path
 
-config = json.load(open('servers.json'))
+base_path = Path(__file__).parent
+servers_json_path = (base_path / "servers.json").resolve()
+
+config = json.load(open(servers_json_path))
+
 # thread number
 THREAD_NUM = config['threadNum']
 
@@ -61,7 +66,7 @@ class myThread (multiprocessing.Process):
         multiprocessing.Process.__init__(self)
 
     def run(self):
-        print '[LOG]: start new thread '+str(self.threadID)
+        print('[LOG]: start new thread '+str(self.threadID))
         for sidFrom in self.sfrom:
             dic1 = self.sid_seq[sidFrom]
             dists = []
@@ -112,7 +117,7 @@ def calDist(inputPath, sidsPath, outputPath, tmpPrefix='', idfMapPath=None):
                                                  sidsPath.split('sid_')[0]))
     # read the ngram file, generate a node list
     lineNum = 1
-    sids = cPickle.load(open(sidsPath))
+    sids = pickle.load(open(sidsPath))
 
     fromSids = set(sids[0])
     # in principle the toSids should be all sids
@@ -122,7 +127,7 @@ def calDist(inputPath, sidsPath, outputPath, tmpPrefix='', idfMapPath=None):
 
     # get the idfMap, if provided
     if (idfMapPath):
-        idfMap = cPickle.load(open(idfMapPath))
+        idfMap = pickle.load(open(idfMapPath))
     else:
         idfMap = None
 
@@ -199,11 +204,11 @@ def partialMatrix(sids, idfMap, ngramPath, tmpPrefix, outputPath,
         step = total / len(servers) + 1
     processes = []
     start = 0
-    cPickle.dump(idfMap, open('%s%sidf.pkl' % (outputPath, tmpPrefix), 'w'))
+    pickle.dump(idfMap, open('%s%sidf.pkl' % (outputPath, tmpPrefix), 'w'))
     for server in servers:
         if (start >= total):
             break
-        cPickle.dump([sids[start:start+step], sids], open('%s%ssid_%s.pkl' %
+        pickle.dump([sids[start:start+step], sids], open('%s%ssid_%s.pkl' %
                      (outputPath, tmpPrefix, server), 'w'))
         print('[LOG]: starting in %s for %s' % (server, tmpPrefix))
         if server == 'localhost':
@@ -272,7 +277,7 @@ def fullMatrix(inputPath, outputPath):
     for server in servers:
         if (start >= total):
             break
-        cPickle.dump([sids[start:start+step], sids], open('%ssid_%s.pkl' %
+        pickle.dump([sids[start:start+step], sids], open('%ssid_%s.pkl' %
                      (outputPath, server), 'w'))
         print('starting in %s' % server)
         processes.append(subprocess.Popen(
