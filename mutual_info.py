@@ -7,6 +7,7 @@ import sys
 import cProfile
 import pstats
 from io import StringIO
+from functools import reduce
 
 
 def avgStdWithZero(l, numZero):
